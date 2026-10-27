@@ -93,6 +93,7 @@
         if (changed && !sc.instant) { sc.stop(c); Object.assign(c, t, { alpha: 0 }); sc.go(c, { alpha: 1 }, 0.1, 0.7); }
         else sc.go(c, t);
       });
+      chs.forEach(c => sc.go(c, { bow: 0 }, 0, 0.5));
       sc.go(sc.spin, { grow: spin.grow, alpha: spin.alpha });
       sc.go(sc.eq, { alpha: eq ? 1 : 0 });
       return g;
@@ -102,7 +103,7 @@
       chs.forEach(c => c.arms.forEach(a => a.forEach(arm => { if (arm.c1) sc.go(arm, { m: v }, delay, dur); })));
     }
     function chiasma(on) {
-      sc.chiasmaPts = [0, 1].map(p => { const c = PAIRC[p], r = c[2], d = 0.6 * chs[p * 2].L;
+      sc.chiasmaPts = [0, 1].map(p => { const c = PAIRC[p], r = c[2], d = p === 0 ? 0 : 0.6 * chs[p * 2].L;
         return { x: c[0] - Math.sin(r) * d, y: c[1] + Math.cos(r) * d, r: p === 0 ? 24 : 15 }; });
       sc.go(sc.chiasma, { alpha: on ? 1 : 0 }, on ? 2.6 : 0, 0.5);
     }
@@ -217,7 +218,9 @@
         sc.dur = 1.6;
         chs.forEach(ch => place(ch, crossPos(ch)));
         sc.dur = 1.2;
-        cross(1, 2.0, 2.2); chiasma(true);
+        // The large pair's swapping chromatids bow together to touch, swap, then relax.
+        [chs[0], chs[1]].forEach(c => sc.seq(c, 'bow', 0, [[1, 1.7, 1.2], [0, 5.6, 1.2]]));
+        cross(1, 3.2, 1.8); chiasma(true);
         sc.setLabels([
           { text: 'Crossing over', x: 500, y: 32, kind: 'process' },
           L('Chromatid', 95, 125, () => sc.armPt(chs[0], 0, 0, 0.7)),

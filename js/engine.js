@@ -36,7 +36,7 @@
           this.chs.push({
             id, pair: p, hom: h, L: s.L, g: s.g, w: s.w, col,
             x: 500, y: 320, rot: 0, sc: 1, bend: 0, mv: 0, nest: 0,
-            dir: [-1, 1], alpha: 1, att: 'none',
+            dir: [-1, 1], alpha: 1, att: 'none', bow: 0, bulge: p === 0 ? 17 : 0,
             ph: Math.random() * 6.28, pts: [],
             arms: [[{ c0: col, c1: null, m: 0 }, { c0: col, c1: null, m: 0 }],
                    [{ c0: col, c1: null, m: 0 }, { c0: col, c1: null, m: 0 }]]
@@ -72,6 +72,13 @@
       }
     }
 
+    seq(obj, k, start, list) {
+      this.tweens = this.tweens.filter(t => !(t.o === obj && t.k === k));
+      if (this.instant) { obj[k] = list[list.length - 1][0]; return; }
+      obj[k] = start; let from = start;
+      for (const [to, delay, dur] of list) { this.tweens.push({ o: obj, k, from, to, t0: this.time + delay, dur }); from = to; }
+    }
+
     stop(obj) { this.tweens = this.tweens.filter(t => t.o !== obj); }
 
     update(dt) {
@@ -99,7 +106,7 @@
     cpt(ch, i) { return ch.pts[i || 0] ? ch.pts[i || 0].C : { x: ch.x, y: ch.y }; }
     armPt(ch, i, arm, f) {
       const p = ch.pts[i]; if (!p) return { x: ch.x, y: ch.y };
-      const E = arm === 0 ? p.A : p.B, K = arm === 0 ? p.cA : p.cB, C = p.C, u = f;
+      const E = arm === 0 ? p.A : p.B, K = arm === 0 ? p.cA : p.cB, C = p.M, u = f;
       return { x: (1 - u) * (1 - u) * C.x + 2 * (1 - u) * u * K.x + u * u * E.x,
                y: (1 - u) * (1 - u) * C.y + 2 * (1 - u) * u * K.y + u * u * E.y };
     }
@@ -180,10 +187,16 @@
         const bx = lerp(cx - sA * g, cx - d * tr, b), by = lerp(L, 0.8 * L, b);
         const w1 = Math.sin(t * 1.3 + ch.ph + i * 1.7) * 3, w2 = Math.sin(t * 1.1 + ch.ph * 1.3 + i) * 3;
         const w3 = Math.sin(t * 0.9 + ch.ph * 2 + i) * 3, w4 = Math.cos(t * 1.0 + ch.ph + i * 2) * 3;
-        ch.pts.push({
-          C: tx(cx, 0), A: tx(ax + w1, ay), B: tx(bx + w2, by),
-          cA: tx((cx + ax) / 2 + w3, ay / 2), cB: tx((cx + bx) / 2 + w4, by / 2)
-        });
+        const loc = { C: [cx, 0], M: [cx, 0], A: [ax + w1, ay], B: [bx + w2, by], cA: [(cx + ax) / 2 + w3, ay / 2], cB: [(cx + bx) / 2 + w4, by / 2] };
+        if (ch.bow > 0.001 && ch.bulge > 0) {
+          // The chromosome opens into ( ) so the inner chromatids bow towards their partner and touch at the middle.
+          const bd = ch.hom ? -1 : 1, inner = i === (ch.hom ? 1 : 0), ex = cx;
+          const mx = cx + bd * (inner ? ch.bulge : -0.45 * ch.bulge), pcx = 2 * mx - ex;
+          const tg = { A: [ex + w1, -L], B: [ex + w2, L], M: [mx, 0], cA: [(ex + pcx) / 2 + w3, -L / 2], cB: [(ex + pcx) / 2 + w4, L / 2] };
+          for (const k in tg) loc[k] = [lerp(loc[k][0], tg[k][0], ch.bow), lerp(loc[k][1], tg[k][1], ch.bow)];
+        }
+        const P = {}; for (const k in loc) P[k] = tx(loc[k][0], loc[k][1]);
+        ch.pts.push(P);
       }
       ctx.save();
       ctx.globalAlpha = ch.alpha; ctx.lineCap = 'round';
@@ -192,7 +205,7 @@
         for (let pass = 0; pass < 2; pass++) {
           for (let j = 0; j < 2; j++) {
             const E = j === 0 ? p.A : p.B, K = j === 0 ? p.cA : p.cB;
-            ctx.beginPath(); ctx.moveTo(p.C.x, p.C.y); ctx.quadraticCurveTo(K.x, K.y, E.x, E.y);
+            ctx.beginPath(); ctx.moveTo(p.M.x, p.M.y); ctx.quadraticCurveTo(K.x, K.y, E.x, E.y);
             if (pass === 0) { ctx.strokeStyle = 'rgba(25,25,50,0.6)'; ctx.lineWidth = (ch.w + 4) * s; }
             else { ctx.strokeStyle = armCol(ch.arms[i][j]); ctx.lineWidth = ch.w * s; }
             ctx.stroke();
