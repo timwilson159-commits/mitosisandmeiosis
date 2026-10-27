@@ -64,7 +64,7 @@
 
   /* ---------- model ---------- */
   function startModel() {
-    S.sides = [0, 0, 0]; S.randomised = false; S.segr = [0, 1, 2, 3, 4, 5].map(() => (Math.random() < 0.5 ? 0 : 1));
+    S.sides = [0, 0, 0]; S.randomised = false; S.segr = [0, 0, 0, 0, 0, 0]; S.segrDone = [false, false];
     sc = new CD.Scene(); sc.init(S.colours);
     steps = CD.buildSteps(sc, S);
     idx = 0; popupOpen = false;
@@ -97,8 +97,10 @@
     updateNext();
   }
 
+  function isLocked(st) { return st.randomise === 'segr' ? !S.segrDone[st.side] : !!st.randomise && !S.randomised; }
+
   function updateNext() {
-    const st = steps[idx], locked = st.randomise && !S.randomised;
+    const st = steps[idx], locked = isLocked(st);
     $('btn-next').disabled = locked || popupOpen;
     $('btn-next').textContent = idx === steps.length - 1 ? 'Finish' : 'Next';
     $('btn-back').disabled = idx === 0 || popupOpen;
@@ -117,7 +119,7 @@
     if (popupOpen) { closePopup(); return; }
     if (screen !== 'model') return;
     const st = steps[idx];
-    if (st.randomise && !S.randomised) { flash($('btn-random')); return; }
+    if (isLocked(st)) { flash($('btn-random')); return; }
     if (idx < steps.length - 1) goStep(idx + 1, 1); else openSummary();
   }
   function back() {
@@ -132,6 +134,15 @@
   $('btn-colours').addEventListener('click', () => { stopLoop(); buildSetup(); show('colours'); });
 
   $('btn-random').addEventListener('click', () => {
+    const st = steps[idx];
+    if (st.randomise === 'segr') {
+      const ids = [0, 1, 2].map(p => p * 2 + (st.side === 0 ? S.sides[p] : 1 - S.sides[p])), prev = ids.map(i => S.segr[i]).join('');
+      let n; do { n = ids.map(() => (Math.random() < 0.5 ? 0 : 1)); } while (n.join('') === prev);
+      ids.forEach((id, i) => { S.segr[id] = n[i]; });
+      S.segrDone[st.side] = true;
+      sc.dur = 0.9; st.apply(); sc.dur = 1.2; updateNext();
+      return;
+    }
     const old = S.sides.join('');
     let n; do { n = [0, 1, 2].map(() => (Math.random() < 0.5 ? 0 : 1)); } while (n.join('') === old);
     S.sides = n; S.randomised = true;

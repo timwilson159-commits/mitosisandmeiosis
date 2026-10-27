@@ -44,6 +44,14 @@
         '<p><b>Link to variation:</b> Different combinations of chromosomes end up in each daughter cell, so gametes differ from each other and from the parent.</p>' +
         '<p><b>Your turn:</b> Press <b>Randomise</b> to shuffle how your pairs line up. Press it as many times as you like. The arrangement you stop on is carried through the rest of meiosis.</p>',
       button: 'Got it'
+    },
+    segr: {
+      title: 'Random segregation',
+      body: '<p><b>When:</b> Anaphase II (set up here in Metaphase II).</p>' +
+        '<p><b>How:</b> After crossing over, the two sister chromatids of a chromosome are no longer identical. Each chromosome can face the poles either way round, so which chromatid goes to which pole is random. Every chromosome does this independently.</p>' +
+        '<p><b>Link to variation:</b> Different combinations of chromatids end up in each daughter cell, so the 4 cells are all genetically different.</p>' +
+        '<p><b>Your turn:</b> Press <b>Randomise</b> to rotate your chromosomes. Press it as many times as you like. The way round they end up decides which chromatid moves left and which moves right in Anaphase II.</p>',
+      button: 'Got it'
     }
   };
 
@@ -287,7 +295,8 @@
     [0, 1].forEach(side => {
       const key = 'II' + side, tag = side === 0 ? 'Left cell' : 'Right cell';
       const set = () => setOf(side);
-      const segDirs = ch => (S.segr[ch.id] === 0 ? [-1, 1] : [1, -1]);
+      const segDirs = () => [-1, 1];                       // local directions; the chromosome's rotation decides which way round it faces
+      const segRot = ch => (S.segr[ch.id] ? Math.PI : 0);
       steps.push({
         phase: 'Prophase II', sub: tag, side,
         text: ul(['<b>Very little happens</b> in Prophase II.', 'Chromosomes are still condensed. This cell has only 3 (haploid).', 'The nuclear envelope breaks down and a new spindle forms.']),
@@ -300,15 +309,15 @@
         }
       });
       steps.push({
-        phase: 'Metaphase II', sub: tag, side,
+        phase: 'Metaphase II', sub: tag, side, popup: 'segr', randomise: 'segr',
         highlight: 'The chromosomes line up in a single file along the equator.',
-        text: ul(['Spindle fibres from both poles attach to the <b>centromere</b> of each chromosome.', 'Chromosomes line up single file, not in pairs, because the homologues were separated in meiosis I.']),
+        text: ul(['Spindle fibres from both poles attach to the <b>centromere</b> of each chromosome.', 'Each chromosome can face either way round: this is <b>random segregation</b>.', 'Press <b>Randomise</b> as many times as you like.']),
         apply() {
           const s = set(); hide(s);
           stage(key, 'meta', true, { grow: 1, alpha: 1 }, true, false);
           const ys = fileY(s, 60);
-          s.forEach((ch, p) => { ch.dir = segDirs(ch); place(ch, { x: CX, y: ys[p], att: 'both' }); });
-          sc.setLabels([L('Spindle fibres', 905, 150, fibre(s[0], 1, 0.5)), L('Centriole', 95, 470, cenPt(0)), L('Centriole', 905, 470, cenPt(1))]);
+          s.forEach((ch, p) => { ch.dir = segDirs(ch); place(ch, { x: CX, y: ys[p], rot: segRot(ch), att: 'both' }); });
+          sc.setLabels([{ text: 'Random segregation', x: 500, y: 30, kind: 'process' }, L('Spindle fibres', 905, 150, fibre(s[0], 1, 0.5)), L('Centriole', 95, 470, cenPt(0)), L('Centriole', 905, 470, cenPt(1))]);
         }
       });
       steps.push({
@@ -316,14 +325,14 @@
         text: ul(['The <b>centromeres</b> split.', 'Sister chromatids are pulled to opposite poles.', 'Crossing over made sister chromatids different, so which chromatid goes to which pole is random: <b>random segregation</b>.']),
         apply() {
           const s = set(), g = stage(key, 'ana', true, { grow: 1, alpha: 1 }, true, false); hide(s);
-          s.forEach((ch, p) => { ch.dir = segDirs(ch); place(ch, { x: CX, y: CY + (p - 1) * 105, bend: 1, mv: g.apex, att: 'both' }); });
+          s.forEach((ch, p) => { ch.dir = segDirs(ch); place(ch, { x: CX, y: CY + (p - 1) * 105, rot: segRot(ch), bend: 1, mv: g.apex, att: 'both' }); });
           sc.setLabels([{ text: 'Random segregation', x: 500, y: 30, kind: 'process' },
             L('Centromere', 905, 150, cPt(s[0], 1)), L('Spindle fibres', 95, 590, fibre(s[2], 0, 0.6))]);
         }
       });
       const teloII = name => function () {
         const s = set(), g = stage(key, name, true, { grow: 1, alpha: 0 }, false, false); hide(s);
-        s.forEach(ch => { ch.dir = segDirs(ch); place(ch, { x: CX, y: CY + (ch.pair - 1) * 100, bend: 0.5, sc: 0.9, mv: g.lobe, att: 'none' }); });
+        s.forEach(ch => { ch.dir = segDirs(ch); place(ch, { x: CX, y: CY + (ch.pair - 1) * 100, rot: segRot(ch), bend: 0.5, sc: 0.9, mv: g.lobe, att: 'none' }); });
       };
       steps.push({
         phase: 'Telophase II', sub: tag, side,

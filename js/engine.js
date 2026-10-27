@@ -114,7 +114,7 @@
       if (!ch.pts.length || ch.att === 'none') return null;
       if (ch.att === 'left' && pole !== 0) return null;
       if (ch.att === 'right' && pole !== 1) return null;
-      if (ch.mv > 2) { const want = pole === 0 ? -1 : 1; return ch.pts[ch.dir[0] === want ? 0 : 1].C; }
+      if (ch.mv > 2) { const want = (pole === 0 ? -1 : 1) * (Math.cos(ch.rot) < 0 ? -1 : 1); return ch.pts[ch.dir[0] === want ? 0 : 1].C; }
       return ch.pts[0].C;
     }
 
