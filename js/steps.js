@@ -223,7 +223,7 @@
         cross(1, 3.2, 1.8); chiasma(true);
         sc.setLabels([
           { text: 'Crossing over', x: 500, y: 32, kind: 'process' },
-          L('Chromatid', 95, 125, () => sc.armPt(chs[0], 0, 0, 0.7)),
+          L('Chromatid', 95, 125, () => sc.armPt(chs[0], 0, 0, 0.8)),
           L('Centromere', 95, 330, cPt(chs[2], 0)),
           L('Chiasma', 905, 250, () => sc.chiasmaPts[1])
         ]);

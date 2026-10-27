@@ -28,7 +28,7 @@
   /* ---------- colour setup ---------- */
   function xSvg(col, size) {
     const L = [34, 17, 8.5][size], g = [9, 5, 3][size];
-    const lines = [[-g, -L, g, L], [g, -L, -g, L]];
+    const lines = [[-g, -L, 0, 0], [-g, L, 0, 0], [g, -L, 0, 0], [g, L, 0, 0]];
     return '<svg viewBox="-40 -40 80 80" width="86" height="86"><g stroke-linecap="round" fill="none">' +
       lines.map(l => '<line x1="' + l[0] + '" y1="' + l[1] + '" x2="' + l[2] + '" y2="' + l[3] + '" stroke="#222" stroke-width="' + (11 - size) + '"/>').join('') +
       lines.map(l => '<line x1="' + l[0] + '" y1="' + l[1] + '" x2="' + l[2] + '" y2="' + l[3] + '" stroke="' + col + '" stroke-width="' + (7 - size) + '"/>').join('') +

@@ -36,7 +36,7 @@
           this.chs.push({
             id, pair: p, hom: h, L: s.L, g: s.g, w: s.w, col,
             x: 500, y: 320, rot: 0, sc: 1, bend: 0, mv: 0, nest: 0,
-            dir: [-1, 1], alpha: 1, att: 'none', bow: 0, bulge: p === 0 ? 17 : 0,
+            dir: [-1, 1], alpha: 1, att: 'none', bow: 0, bulge: p === 0 ? 16 : 0,
             ph: Math.random() * 6.28, pts: [],
             arms: [[{ c0: col, c1: null, m: 0 }, { c0: col, c1: null, m: 0 }],
                    [{ c0: col, c1: null, m: 0 }, { c0: col, c1: null, m: 0 }]]
@@ -44,10 +44,10 @@
         }
       }
       // Crossing over pattern: large = whole chromatid, medium = bottom half of a chromatid, small = none.
-      // Inner chromatids (A chromatid 0, B chromatid 1) are the ones that swap, as in the textbook picture.
+      // Chromatids sit left and right; the inner ones (A's right, B's left) are the ones that swap.
       const c = this.chs;
-      [0, 1].forEach(j => { c[0].arms[0][j].c1 = c[1].col; c[1].arms[1][j].c1 = c[0].col; });
-      c[2].arms[0][1].c1 = c[3].col; c[3].arms[1][1].c1 = c[2].col;
+      [0, 1].forEach(j => { c[0].arms[1][j].c1 = c[1].col; c[1].arms[0][j].c1 = c[0].col; });
+      c[2].arms[1][1].c1 = c[3].col; c[3].arms[0][1].c1 = c[2].col;
 
       this.cell = { rx: 290, ry: 290, k: 0, sep: 0, alpha: 1 };
       this.ghost = { rx: 290, ry: 290, k: 0, sep: 0, alpha: 0 };
@@ -184,14 +184,13 @@
         // Chromosomes stand upright: arms run up and down, sister chromatids sit left and right.
         const d = ch.dir[i], sA = i === 0 ? -1 : 1, cx = d * ch.mv, tr = 0.45 * L + (i ? ch.nest * L / 52 : 0);
         const ax = lerp(cx + sA * g, cx - d * tr, b), ay = lerp(-L, -0.8 * L, b);
-        const bx = lerp(cx - sA * g, cx - d * tr, b), by = lerp(L, 0.8 * L, b);
+        const bx = lerp(cx + sA * g, cx - d * tr, b), by = lerp(L, 0.8 * L, b);
         const w1 = Math.sin(t * 1.3 + ch.ph + i * 1.7) * 3, w2 = Math.sin(t * 1.1 + ch.ph * 1.3 + i) * 3;
         const w3 = Math.sin(t * 0.9 + ch.ph * 2 + i) * 3, w4 = Math.cos(t * 1.0 + ch.ph + i * 2) * 3;
         const loc = { C: [cx, 0], M: [cx, 0], A: [ax + w1, ay], B: [bx + w2, by], cA: [(cx + ax) / 2 + w3, ay / 2], cB: [(cx + bx) / 2 + w4, by / 2] };
-        if (ch.bow > 0.001 && ch.bulge > 0) {
-          // The chromosome opens into ( ) so the inner chromatids bow towards their partner and touch at the middle.
-          const bd = ch.hom ? -1 : 1, inner = i === (ch.hom ? 1 : 0), ex = cx;
-          const mx = cx + bd * (inner ? ch.bulge : -0.45 * ch.bulge), pcx = 2 * mx - ex;
+        if (ch.bow > 0.001 && ch.bulge > 0 && i === (ch.hom ? 0 : 1)) {
+          // The inner chromatid bows towards its partner's inner chromatid so the two touch at the middle.
+          const bd = ch.hom ? -1 : 1, ex = cx + bd * g * 0.3, mx = cx + bd * ch.bulge, pcx = 2 * mx - ex;
           const tg = { A: [ex + w1, -L], B: [ex + w2, L], M: [mx, 0], cA: [(ex + pcx) / 2 + w3, -L / 2], cB: [(ex + pcx) / 2 + w4, L / 2] };
           for (const k in tg) loc[k] = [lerp(loc[k][0], tg[k][0], ch.bow), lerp(loc[k][1], tg[k][1], ch.bow)];
         }
