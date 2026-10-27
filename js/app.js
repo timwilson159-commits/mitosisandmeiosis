@@ -27,7 +27,7 @@
 
   /* ---------- colour setup ---------- */
   function xSvg(col, size) {
-    const L = [34, 26, 18][size], g = [9, 7, 5][size];
+    const L = [34, 17, 8.5][size], g = [9, 5, 3][size];
     const lines = [[-g, -L, g, L], [g, -L, -g, L]];
     return '<svg viewBox="-40 -40 80 80" width="86" height="86"><g stroke-linecap="round" fill="none">' +
       lines.map(l => '<line x1="' + l[0] + '" y1="' + l[1] + '" x2="' + l[2] + '" y2="' + l[3] + '" stroke="#222" stroke-width="' + (11 - size) + '"/>').join('') +
@@ -211,7 +211,7 @@
         chs.forEach(ch => {
           const col = k === 0 && false ? 0 : 0;
           const cx = x + (ch.hom ? 55 : -55), cyy = cy + (ch.pair - 1) * 46;
-          CD.drawRod(ctx, cx, cyy, [34, 25, 17][ch.pair], [10, 9, 7][ch.pair], ch.col, ch.col, t, ch.id + k * 3);
+          CD.drawRod(ctx, cx, cyy, [34, 17, 8.5][ch.pair], [10, 8, 6][ch.pair], ch.col, ch.col, t, ch.id + k * 3);
         });
       } else {
         const cellSide = k < 2 ? 0 : 1, within = k % 2;
@@ -219,7 +219,7 @@
           const ch = chs[p * 2 + (cellSide === 0 ? S.sides[p] : 1 - S.sides[p])];
           const c = within === 0 ? S.segr[ch.id] : 1 - S.segr[ch.id];
           const cols = finalCols(ch, c);
-          CD.drawRod(ctx, x, cy + (p - 1) * 46, [36, 27, 18][p], [12, 10, 8][p], cols[0], cols[1], t, ch.id + k * 2);
+          CD.drawRod(ctx, x, cy + (p - 1) * 46, [36, 18, 9][p], [12, 9, 7][p], cols[0], cols[1], t, ch.id + k * 2);
         });
       }
       text(mit ? 'Diploid (2n = 6)' : 'Haploid (n = 3)', x, cy + r + 28, '700 20px', '#2e6b3a');

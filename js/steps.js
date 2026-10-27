@@ -102,7 +102,8 @@
       chs.forEach(c => c.arms.forEach(a => a.forEach(arm => { if (arm.c1) sc.go(arm, { m: v }, delay, dur); })));
     }
     function chiasma(on) {
-      sc.chiasmaPts = [0, 1].map(p => ({ x: CX, y: pairY(p) + 0.6 * chs[p * 2].L }));
+      sc.chiasmaPts = [0, 1].map(p => { const c = PAIRC[p], r = c[2], d = 0.6 * chs[p * 2].L;
+        return { x: c[0] - Math.sin(r) * d, y: c[1] + Math.cos(r) * d, r: p === 0 ? 24 : 15 }; });
       sc.go(sc.chiasma, { alpha: on ? 1 : 0 }, on ? 2.6 : 0, 0.5);
     }
 
@@ -121,7 +122,12 @@
     const scatter6 = extra => chs.forEach(ch => place(ch, Object.assign({ x: SCAT6[ch.id][0], y: SCAT6[ch.id][1], rot: SCAT6[ch.id][2] }, extra)));
     const colOff = ch => (ch.hom ? 28 : -28);
     const pairY = p => CY + (p - 1) * 125;        // pair rows in prophase I and metaphase I
-    const pairX = ch => CX + (ch.hom ? 24 : -24); // homologues sit side by side
+    const PAIR_DX = [24, 18, 12];                   // half the gap between the two homologues of each pair
+    const pairX = ch => CX + (ch.hom ? 1 : -1) * PAIR_DX[ch.pair];
+    // Where each pair sits (x, y, tilt) while it is crossing over, each in its own part of the nucleus.
+    const PAIRC = [[445, 235, -0.3], [565, 330, 0.25], [470, 432, -0.2]];
+    const crossPos = ch => { const c = PAIRC[ch.pair], d = (ch.hom ? 1 : -1) * PAIR_DX[ch.pair];
+      return { x: c[0] + d * Math.cos(c[2]), y: c[1] + d * Math.sin(c[2]), rot: c[2] }; };
 
     const steps = [];
 
@@ -152,7 +158,7 @@
         text: ul(['Spindle fibres from both poles attach to the <b>centromere</b> of each chromosome.', 'Chromosomes are <b>not</b> in pairs. Homologous chromosomes do not pair up in mitosis.']),
         apply() {
           stage('main', 'meta', false, { grow: 1, alpha: 1 }, true, false);
-          const list = MIT_ORDER.map(id => chs[id]), ys = fileY(list, 18);
+          const list = MIT_ORDER.map(id => chs[id]), ys = fileY(list, 30);
           list.forEach((ch, i) => place(ch, { x: CX, y: ys[i], att: 'both' }));
           sc.setLabels([L('Spindle fibres', 905, 140, fibre(list[0], 1, 0.5)), L('Centriole', 95, 440, cenPt(0)), L('Centriole', 905, 470, cenPt(1))]);
         }
@@ -209,14 +215,14 @@
       apply() {
         stage('I', 'pro', false, { grow: 0, alpha: 1 }, false, false);
         sc.dur = 1.6;
-        chs.forEach(ch => place(ch, { x: pairX(ch), y: pairY(ch.pair) }));
+        chs.forEach(ch => place(ch, crossPos(ch)));
         sc.dur = 1.2;
         cross(1, 2.0, 2.2); chiasma(true);
         sc.setLabels([
           { text: 'Crossing over', x: 500, y: 32, kind: 'process' },
           L('Chromatid', 95, 125, () => sc.armPt(chs[0], 0, 0, 0.7)),
           L('Centromere', 95, 330, cPt(chs[2], 0)),
-          L('Chiasma', 905, 250, () => ({ x: CX, y: pairY(1) + 0.6 * chs[2].L }))
+          L('Chiasma', 905, 250, () => sc.chiasmaPts[1])
         ]);
       }
     });
@@ -226,7 +232,7 @@
       apply() {
         stage('I', 'pro', false, { grow: 0.45, alpha: 1 }, false, true);
         sc.go(sc.nuc[0], { alpha: 0.28 }, 0, 2.2);
-        chs.forEach(ch => place(ch, { x: pairX(ch), y: pairY(ch.pair), att: ch.hom ? 'right' : 'left' }));
+        chs.forEach(ch => place(ch, Object.assign(crossPos(ch), { att: ch.hom ? 'right' : 'left' })));
         cross(1, 0, 0.1); chiasma(false);
         sc.setLabels([L('Nuclear envelope breaking down', 215, 35, nucPt(0, 235)), L('Spindle fibres', 905, 150, fibre(chs[1], 1, 0.7)), L('Centriole', 95, 470, cenPt(0))]);
       }
@@ -238,7 +244,7 @@
       apply() {
         stage('I', 'meta', false, { grow: 1, alpha: 1 }, true, false);
         cross(1, 0, 0.1); chiasma(false);
-        chs.forEach(ch => { const s = sideOf(ch); place(ch, { x: CX + s * 24, y: pairY(ch.pair), att: s < 0 ? 'left' : 'right' }); });
+        chs.forEach(ch => { const s = sideOf(ch); place(ch, { x: CX + s * PAIR_DX[ch.pair], y: pairY(ch.pair), att: s < 0 ? 'left' : 'right' }); });
         sc.setLabels([{ text: 'Independent assortment', x: 500, y: 30, kind: 'process' },
           L('Spindle fibres', 905, 150, fibre(homOn(0, 1), 1, 0.5)), L('Centriole', 95, 470, cenPt(0))]);
       }
@@ -297,7 +303,7 @@
         apply() {
           const s = set(); hide(s);
           stage(key, 'meta', true, { grow: 1, alpha: 1 }, true, false);
-          const ys = fileY(s, 40);
+          const ys = fileY(s, 60);
           s.forEach((ch, p) => { ch.dir = segDirs(ch); place(ch, { x: CX, y: ys[p], att: 'both' }); });
           sc.setLabels([L('Spindle fibres', 905, 150, fibre(s[0], 1, 0.5)), L('Centriole', 95, 470, cenPt(0)), L('Centriole', 905, 470, cenPt(1))]);
         }

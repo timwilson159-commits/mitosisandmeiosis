@@ -13,7 +13,7 @@
     return 'rgb(' + A.map((v, i) => Math.round(lerp(v, B[i], m))).join(',') + ')';
   }
 
-  const SIZES = [{ L: 52, g: 13, w: 11 }, { L: 40, g: 10, w: 9 }, { L: 27, g: 8, w: 8 }];
+  const SIZES = [{ L: 52, g: 13, w: 11 }, { L: 26, g: 7, w: 8 }, { L: 13, g: 4, w: 6 }];
 
   function armCol(arm) { return arm.c1 ? mixCol(arm.c0, arm.c1, arm.m) : arm.c0; }
 
@@ -175,7 +175,7 @@
       ch.pts = [];
       for (let i = 0; i < 2; i++) {
         // Chromosomes stand upright: arms run up and down, sister chromatids sit left and right.
-        const d = ch.dir[i], sA = i === 0 ? -1 : 1, cx = d * ch.mv, tr = 0.45 * L + (i ? ch.nest : 0);
+        const d = ch.dir[i], sA = i === 0 ? -1 : 1, cx = d * ch.mv, tr = 0.45 * L + (i ? ch.nest * L / 52 : 0);
         const ax = lerp(cx + sA * g, cx - d * tr, b), ay = lerp(-L, -0.8 * L, b);
         const bx = lerp(cx - sA * g, cx - d * tr, b), by = lerp(L, 0.8 * L, b);
         const w1 = Math.sin(t * 1.3 + ch.ph + i * 1.7) * 3, w2 = Math.sin(t * 1.1 + ch.ph * 1.3 + i) * 3;
@@ -202,7 +202,7 @@
       const dots = ch.mv > 2 ? [0, 1] : [0];
       dots.forEach(i => {
         const C = ch.pts[i].C;
-        ctx.beginPath(); ctx.arc(C.x, C.y, 5 * s, 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.beginPath(); ctx.arc(C.x, C.y, Math.max(2.5, 5 * Math.min(1, L / 40)) * s, 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
         ctx.strokeStyle = '#444'; ctx.lineWidth = 1.5; ctx.stroke();
       });
       ctx.restore();
@@ -270,7 +270,7 @@
         const pulse = 1 + Math.sin(this.time * 4) * 0.12;
         this.chiasmaPts.forEach(p => {
           ctx.globalAlpha = this.chiasma.alpha; ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 3.5;
-          ctx.beginPath(); ctx.arc(p.x, p.y, 26 * pulse, 0, 7); ctx.stroke();
+          ctx.beginPath(); ctx.arc(p.x, p.y, (p.r || 24) * pulse, 0, 7); ctx.stroke();
         });
         ctx.restore();
       }
