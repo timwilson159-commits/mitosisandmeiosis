@@ -27,10 +27,11 @@
 
   /* ---------- colour setup ---------- */
   function xSvg(col, size) {
-    const L = [30, 23, 16][size], g = 5 + (2 - size) * 0.5 + 2;
+    const L = [34, 26, 18][size], g = [9, 7, 5][size];
+    const lines = [[-g, -L, g, L], [g, -L, -g, L]];
     return '<svg viewBox="-40 -40 80 80" width="86" height="86"><g stroke-linecap="round" fill="none">' +
-      [[-L, -g, L, g], [-L, g, L, -g]].map(l => '<line x1="' + l[0] + '" y1="' + l[1] + '" x2="' + l[2] + '" y2="' + l[3] + '" stroke="#222" stroke-width="' + (9 + 4 - size) + '"/>').join('') +
-      [[-L, -g, L, g], [-L, g, L, -g]].map(l => '<line x1="' + l[0] + '" y1="' + l[1] + '" x2="' + l[2] + '" y2="' + l[3] + '" stroke="' + col + '" stroke-width="' + (6 + 4 - size) + '"/>').join('') +
+      lines.map(l => '<line x1="' + l[0] + '" y1="' + l[1] + '" x2="' + l[2] + '" y2="' + l[3] + '" stroke="#222" stroke-width="' + (11 - size) + '"/>').join('') +
+      lines.map(l => '<line x1="' + l[0] + '" y1="' + l[1] + '" x2="' + l[2] + '" y2="' + l[3] + '" stroke="' + col + '" stroke-width="' + (7 - size) + '"/>').join('') +
       '</g></svg>';
   }
   function buildSetup() {
@@ -169,8 +170,8 @@
     show('summary');
     $('sum-title').textContent = S.kind === 'mitosis' ? 'Mitosis: summary' : 'Meiosis: summary';
     $('sum-text').innerHTML = S.kind === 'mitosis'
-      ? 'One <b>diploid</b> parent cell has made <b>2 identical diploid</b> daughter cells. Each daughter cell has the same 6 chromosomes as the parent.'
-      : 'One <b>diploid</b> parent cell has made <b>4 non-identical haploid</b> daughter cells. Each has only 3 chromosomes, one from each pair, and crossing over, independent assortment and random segregation have made every cell different.';
+      ? '<ul><li>1 <b>diploid</b> parent cell (2n = 6)</li><li>Makes <b>2 diploid</b> daughter cells</li><li>Daughter cells are <b>identical</b> to each other and the parent</li><li>Each has the same 6 chromosomes as the parent</li></ul>'
+      : '<ul><li>1 <b>diploid</b> parent cell (2n = 6)</li><li>Makes <b>4 haploid</b> daughter cells (n = 3)</li><li>Each has 1 chromosome from each pair</li><li>Cells are <b>non-identical</b> because of:<ul><li>crossing over</li><li>independent assortment</li><li>random segregation</li></ul></li></ul>';
   }
   function backFromSummary() { show('model'); goStep(steps.length - 1, -1); }
   $('sum-back').addEventListener('click', backFromSummary);

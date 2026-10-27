@@ -13,7 +13,7 @@
     return 'rgb(' + A.map((v, i) => Math.round(lerp(v, B[i], m))).join(',') + ')';
   }
 
-  const SIZES = [{ L: 95, g: 26, w: 13 }, { L: 70, g: 20, w: 11 }, { L: 48, g: 15, w: 9 }];
+  const SIZES = [{ L: 52, g: 13, w: 11 }, { L: 40, g: 10, w: 9 }, { L: 27, g: 8, w: 8 }];
 
   function armCol(arm) { return arm.c1 ? mixCol(arm.c0, arm.c1, arm.m) : arm.c0; }
 
@@ -43,10 +43,11 @@
           });
         }
       }
-      // Crossing over pattern: large = whole chromatid, medium = one arm (half), small = none.
+      // Crossing over pattern: large = whole chromatid, medium = bottom half of a chromatid, small = none.
+      // Inner chromatids (A chromatid 0, B chromatid 1) are the ones that swap, as in the textbook picture.
       const c = this.chs;
-      [0, 1].forEach(j => { c[0].arms[1][j].c1 = c[1].col; c[1].arms[0][j].c1 = c[0].col; });
-      c[2].arms[1][1].c1 = c[3].col; c[3].arms[0][1].c1 = c[2].col;
+      [0, 1].forEach(j => { c[0].arms[0][j].c1 = c[1].col; c[1].arms[1][j].c1 = c[0].col; });
+      c[2].arms[0][1].c1 = c[3].col; c[3].arms[1][1].c1 = c[2].col;
 
       this.cell = { rx: 290, ry: 290, k: 0, sep: 0, alpha: 1 };
       this.ghost = { rx: 290, ry: 290, k: 0, sep: 0, alpha: 0 };
@@ -173,15 +174,15 @@
       const tx = (px, py) => ({ x: ox + s * (px * cos - py * sin), y: oy + s * (px * sin + py * cos) });
       ch.pts = [];
       for (let i = 0; i < 2; i++) {
-        const d = ch.dir[i], sA = i === 0 ? -1 : 1, spread = 0.45 * L + (i ? ch.nest : 0);
-        const cx = d * ch.mv;
-        const ax = cx + lerp(-L, -d * 0.8 * L, b), ay = lerp(sA * g, sA * spread, b);
-        const bx = cx + lerp(L, -d * 0.8 * L, b), by = lerp(-sA * g, -sA * spread, b);
+        // Chromosomes stand upright: arms run up and down, sister chromatids sit left and right.
+        const d = ch.dir[i], sA = i === 0 ? -1 : 1, cx = d * ch.mv, tr = 0.45 * L + (i ? ch.nest : 0);
+        const ax = lerp(cx + sA * g, cx - d * tr, b), ay = lerp(-L, -0.8 * L, b);
+        const bx = lerp(cx - sA * g, cx - d * tr, b), by = lerp(L, 0.8 * L, b);
         const w1 = Math.sin(t * 1.3 + ch.ph + i * 1.7) * 3, w2 = Math.sin(t * 1.1 + ch.ph * 1.3 + i) * 3;
         const w3 = Math.sin(t * 0.9 + ch.ph * 2 + i) * 3, w4 = Math.cos(t * 1.0 + ch.ph + i * 2) * 3;
         ch.pts.push({
-          C: tx(cx, 0), A: tx(ax, ay + w1), B: tx(bx, by + w2),
-          cA: tx((cx + ax) / 2, ay / 2 + w3), cB: tx((cx + bx) / 2, by / 2 + w4)
+          C: tx(cx, 0), A: tx(ax + w1, ay), B: tx(bx + w2, by),
+          cA: tx((cx + ax) / 2 + w3, ay / 2), cB: tx((cx + bx) / 2 + w4, by / 2)
         });
       }
       ctx.save();

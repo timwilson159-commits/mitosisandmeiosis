@@ -7,8 +7,8 @@
   const MIT_ORDER = [0, 3, 4, 1, 2, 5];
 
   function GEO(name, m2) {
-    const r = m2 ? 280 : 290;
-    const none = { x: CX, y: CY, rx: 130, ry: 150, alpha: 0 };
+    const r = m2 ? 280 : 295;
+    const none = { x: CX, y: CY, rx: 120, ry: 160, alpha: 0 };
     switch (name) {
       case 'pro': case 'meta': {
         const nr = m2 ? 185 : 205;
@@ -22,9 +22,9 @@
       }
       case 'telo': case 'cyto': {
         const rx = m2 ? 390 : 400, cy = name === 'cyto', lobe = rx / 2 + (cy ? 20 : 0);
-        return { rx, ry: cy ? (m2 ? 210 : 215) : (m2 ? 235 : 245), k: cy ? 1 : 0.55, sep: cy ? 20 : 0, lobe,
+        return { rx, ry: cy ? (m2 ? 215 : 220) : (m2 ? 240 : 250), k: cy ? 1 : 0.55, sep: cy ? 20 : 0, lobe,
           cen: [CX - (lobe + rx / 2 - 30), CX + (lobe + rx / 2 - 30)], apex: 0,
-          nuc: [{ x: CX - lobe, y: CY, rx: 130, ry: 150, alpha: 1 }, { x: CX + lobe, y: CY, rx: 130, ry: 150, alpha: 1 }] };
+          nuc: [{ x: CX - lobe, y: CY, rx: 120, ry: 160, alpha: 1 }, { x: CX + lobe, y: CY, rx: 120, ry: 160, alpha: 1 }] };
       }
     }
   }
@@ -47,11 +47,14 @@
     }
   };
 
+  const ul = items => '<ul>' + items.map(i => '<li>' + i + '</li>').join('') + '</ul>';
+
   function build(sc, S) {
     const mit = S.kind === 'mitosis';
     const chs = sc.chs;
     const sideOf = ch => (S.sides[ch.pair] === ch.hom ? -1 : 1);
     const setOf = side => [0, 1, 2].map(p => chs[p * 2 + (side === 0 ? S.sides[p] : 1 - S.sides[p])]);
+    const homOn = (p, s) => chs[p * 2 + (s < 0 ? S.sides[p] : 1 - S.sides[p])];
 
     const BASE = { rot: 0, sc: 1, bend: 0, mv: 0, nest: 0, alpha: 1, att: 'none' };
 
@@ -63,6 +66,13 @@
       } else sc.go(ch, o);
     }
     function hide(list) { chs.forEach(c => { if (!list.includes(c)) sc.go(c, { alpha: 0 }, 0, 0.6); }); }
+
+    // Chromosomes standing in single file down the equator, centred vertically.
+    function fileY(list, gap) {
+      const hs = list.map(c => 2 * c.L), total = hs.reduce((a, b) => a + b, 0) + gap * (list.length - 1);
+      let y = CY - total / 2;
+      return list.map((c, i) => { const m = y + hs[i] / 2; y += hs[i] + gap; return m; });
+    }
 
     function stage(key, name, m2, spin, eq, dash) {
       const g = GEO(name, m2), changed = sc.cellKey !== key && sc.cellKey !== null;
@@ -91,7 +101,10 @@
     function cross(v, delay, dur) {
       chs.forEach(c => c.arms.forEach(a => a.forEach(arm => { if (arm.c1) sc.go(arm, { m: v }, delay, dur); })));
     }
-    function chiasma(on, pts) { sc.chiasmaPts = pts || sc.chiasmaPts; sc.go(sc.chiasma, { alpha: on ? 1 : 0 }, on ? 2.6 : 0, 0.5); }
+    function chiasma(on) {
+      sc.chiasmaPts = [0, 1].map(p => ({ x: CX, y: pairY(p) + 0.6 * chs[p * 2].L }));
+      sc.go(sc.chiasma, { alpha: on ? 1 : 0 }, on ? 2.6 : 0, 0.5);
+    }
 
     // label helpers
     const L = (text, x, y, anchor, kind) => ({ text, x, y, anchor, kind });
@@ -105,18 +118,18 @@
     };
     const chipD = (text, x, y) => ({ text, x, y, kind: 'chip', col: '#e3f2e8' });
 
-    /* ---------- shared layouts ---------- */
-    function scatter6() { chs.forEach(ch => place(ch, { x: SCAT6[ch.id][0], y: SCAT6[ch.id][1], rot: SCAT6[ch.id][2] })); }
-    function scatter3(set) { set.forEach((ch, p) => place(ch, { x: SCAT3[p][0], y: SCAT3[p][1], rot: SCAT3[p][2] })); }
+    const scatter6 = extra => chs.forEach(ch => place(ch, Object.assign({ x: SCAT6[ch.id][0], y: SCAT6[ch.id][1], rot: SCAT6[ch.id][2] }, extra)));
+    const colOff = ch => (ch.hom ? 28 : -28);
+    const pairY = p => CY + (p - 1) * 125;        // pair rows in prophase I and metaphase I
+    const pairX = ch => CX + (ch.hom ? 24 : -24); // homologues sit side by side
 
     const steps = [];
 
     /* ==================== MITOSIS ==================== */
     if (mit) {
-      const geoTelo = GEO('telo', false);
       steps.push({
         phase: 'Prophase', sub: 'Chromosomes condense',
-        text: 'The cell starts with 3 pairs of chromosomes (6 in total). Each chromosome has already been copied, so it is X shaped: two identical <b>sister chromatids</b> joined at the centromere. In prophase the chromosomes condense and become easy to see inside the <b>nucleus</b>. The <b>centrioles</b> sit at opposite poles of the cell.',
+        text: ul(['Chromosomes are already copied: each is X shaped, with 2 identical <b>sister chromatids</b>.', 'They condense and become visible inside the <b>nucleus</b>.', '<b>Centrioles</b> sit at opposite poles of the cell.']),
         apply() {
           stage('main', 'pro', false, { grow: 0, alpha: 1 }, false, false);
           scatter6(); cross(0, 0, 0.1);
@@ -125,48 +138,51 @@
       });
       steps.push({
         phase: 'Prophase', sub: 'Nuclear envelope breaks down',
-        text: 'The nuclear envelope breaks down, so the chromosomes are free in the cell. <b>Spindle fibres</b> start to grow out from the centrioles towards the chromosomes.',
+        text: ul(['The nuclear envelope breaks down.', '<b>Spindle fibres</b> grow from the centrioles towards the chromosomes.']),
         apply() {
           stage('main', 'pro', false, { grow: 0.45, alpha: 1 }, false, true);
           sc.go(sc.nuc[0], { alpha: 0.28 }, 0, 2.2);
-          chs.forEach(ch => place(ch, { x: SCAT6[ch.id][0], y: SCAT6[ch.id][1], rot: SCAT6[ch.id][2], att: 'both' }));
+          scatter6({ att: 'both' });
           sc.setLabels([L('Nuclear envelope breaking down', 215, 35, nucPt(0, 235)), L('Spindle fibres', 905, 150, fibre(chs[1], 1, 0.7)), L('Centriole', 905, 470, cenPt(1))]);
         }
       });
       steps.push({
         phase: 'Metaphase', sub: 'Single file at the equator',
         highlight: 'The chromosomes line up in a single file along the equator of the cell.',
-        text: 'Spindle fibres from both centrioles attach to the <b>centromere</b> of every chromosome. This lines the chromosomes up across the middle of the cell, ready to be split. Notice that the chromosomes are <b>not</b> in pairs. Homologous chromosomes do not pair up in mitosis.',
+        text: ul(['Spindle fibres from both poles attach to the <b>centromere</b> of each chromosome.', 'Chromosomes are <b>not</b> in pairs. Homologous chromosomes do not pair up in mitosis.']),
         apply() {
           stage('main', 'meta', false, { grow: 1, alpha: 1 }, true, false);
-          MIT_ORDER.forEach((id, i) => place(chs[id], { x: CX, y: CY + (i - 2.5) * 88, att: 'both' }));
-          sc.setLabels([L('Spindle fibres', 905, 140, fibre(chs[MIT_ORDER[0]], 1, 0.5)), L('Centriole', 95, 440, cenPt(0)), L('Centriole', 905, 470, cenPt(1))]);
+          const list = MIT_ORDER.map(id => chs[id]), ys = fileY(list, 18);
+          list.forEach((ch, i) => place(ch, { x: CX, y: ys[i], att: 'both' }));
+          sc.setLabels([L('Spindle fibres', 905, 140, fibre(list[0], 1, 0.5)), L('Centriole', 95, 440, cenPt(0)), L('Centriole', 905, 470, cenPt(1))]);
         }
       });
       steps.push({
         phase: 'Anaphase', sub: 'Chromatids pulled apart',
-        text: 'The <b>centromeres</b> split, so each X separates into two single chromosomes (the old sister chromatids). The <b>spindle fibres</b> shorten and pull one copy of every chromosome towards each pole. Each pole receives a full set of chromosomes.',
+        text: ul(['The <b>centromeres</b> split.', 'Spindle fibres shorten and pull the sister chromatids to opposite poles.', 'Each pole gets a full, identical set of chromosomes.']),
         apply() {
           const g = stage('main', 'ana', false, { grow: 1, alpha: 1 }, true, false);
-          MIT_ORDER.forEach((id, i) => { chs[id].dir = [-1, 1]; place(chs[id], { x: CX, y: CY + (i - 2.5) * 88, bend: 1, mv: g.apex, att: 'both' }); });
-          sc.setLabels([L('Centromere', 905, 60, cPt(chs[MIT_ORDER[0]], 1)), L('Spindle fibres', 905, 590, fibre(chs[MIT_ORDER[5]], 1, 0.6)), L('Centriole', 95, 440, cenPt(0))]);
+          chs.forEach(ch => { ch.dir = [-1, 1]; place(ch, { x: CX + colOff(ch), y: CY + (ch.pair - 1) * 95, bend: 1, mv: g.apex, att: 'both' }); });
+          sc.setLabels([L('Centromere', 905, 60, cPt(chs[1], 1)), L('Spindle fibres', 905, 590, fibre(chs[5], 1, 0.6)), L('Centriole', 95, 440, cenPt(0))]);
         }
       });
+      const telo = name => function () {
+        const g = stage('main', name, false, { grow: 1, alpha: 0 }, false, false);
+        chs.forEach(ch => place(ch, { x: CX + colOff(ch), y: CY + (ch.pair - 1) * 95, bend: 0.5, sc: 0.9, mv: g.lobe, att: 'none' }));
+      };
       steps.push({
         phase: 'Telophase', sub: 'New nuclei form',
-        text: 'The chromosomes reach the poles. A new <b>nuclear envelope</b> forms around each set of chromosomes and the spindle fibres break down. The cell begins to pinch in the middle.',
+        text: ul(['Chromosomes reach the poles.', 'A new <b>nuclear envelope</b> forms around each set.', 'The spindle breaks down and the cell starts to pinch in the middle.']),
         apply() {
-          const g = stage('main', 'telo', false, { grow: 1, alpha: 0 }, false, false);
-          chs.forEach(ch => place(ch, { x: CX + (ch.hom ? 32 : -32), y: CY + (ch.pair - 1) * 82, bend: 0.5, sc: 0.8, mv: g.lobe, att: 'none' }));
+          telo('telo')();
           sc.setLabels([L('Nucleus', 500, 32, nucPt(0, 270)), L('Nucleus', 500, 608, nucPt(1, 90)), L('Centriole', 95, 440, cenPt(0)), L('Centriole', 905, 440, cenPt(1))]);
         }
       });
       steps.push({
         phase: 'Cytokinesis', sub: 'The cell divides',
-        text: 'The cytoplasm divides and the cell pinches apart into <b>two separate cells</b>. The two daughter cells are <b>identical</b> to each other and to the parent cell. Each is <b>diploid</b>, with 3 pairs of chromosomes.',
+        text: ul(['The cytoplasm divides, forming <b>2 separate cells</b>.', 'The cells are <b>identical</b> to each other and to the parent cell.', 'Each is <b>diploid</b> (3 pairs of chromosomes).']),
         apply() {
-          const g = stage('main', 'cyto', false, { grow: 1, alpha: 0 }, false, false);
-          chs.forEach(ch => place(ch, { x: CX + (ch.hom ? 32 : -32), y: CY + (ch.pair - 1) * 82, bend: 0.5, sc: 0.8, mv: g.lobe, att: 'none' }));
+          telo('cyto')();
           sc.setLabels([chipD('Diploid (2n = 6)', 280, 55), chipD('Diploid (2n = 6)', 720, 55),
             { text: 'Identical cells', x: 500, y: 608, kind: 'process' }]);
         }
@@ -175,12 +191,9 @@
     }
 
     /* ==================== MEIOSIS ==================== */
-    const pairRowY = p => CY + (p - 1) * 140;
-    const metaRowY = p => CY + (p - 1) * 150;
-
     steps.push({
       phase: 'Prophase I', sub: 'Chromosomes condense',
-      text: 'The cell starts with 3 pairs of chromosomes (6 in total). Each chromosome has already been copied, so it is X shaped: two identical <b>sister chromatids</b> joined at the centromere. In Prophase I the chromosomes condense and become easy to see inside the <b>nucleus</b>. The <b>centrioles</b> sit at opposite poles of the cell.',
+      text: ul(['Chromosomes are already copied: each is X shaped, with 2 identical <b>sister chromatids</b>.', 'They condense and become visible inside the <b>nucleus</b>.', '<b>Centrioles</b> sit at opposite poles of the cell.']),
       apply() {
         stage('I', 'pro', false, { grow: 0, alpha: 1 }, false, false);
         scatter6(); cross(0, 0, 0.1); chiasma(false);
@@ -189,32 +202,31 @@
     });
     steps.push({
       phase: 'Prophase I', sub: 'Crossing over', popup: 'cross', replay: true,
-      text: 'Homologous chromosomes find their partner and <b>pair up</b>. Where two non-sister chromatids touch (a <b>chiasma</b>), they swap matching sections of DNA. This is <b>crossing over</b>. Each pair crosses over differently:' +
-        '<ul><li><b>Large pair:</b> swaps a whole chromatid</li><li><b>Medium pair:</b> swaps one end (half) of a chromatid</li><li><b>Small pair:</b> does not cross over</li></ul>' +
-        'Crossing over makes new combinations of alleles on the chromatids, so it creates <b>variation</b>.',
+      text: ul(['Homologous chromosomes <b>pair up</b>.',
+        'Non-sister chromatids touch at <b>chiasmata</b> and swap sections of DNA. This is <b>crossing over</b>.' +
+        '<ul><li>Large pair: swaps a whole chromatid</li><li>Medium pair: swaps the bottom half of a chromatid</li><li>Small pair: no crossing over</li></ul>',
+        'New allele combinations are made, so crossing over creates <b>variation</b>.']),
       apply() {
         stage('I', 'pro', false, { grow: 0, alpha: 1 }, false, false);
         sc.dur = 1.6;
-        chs.forEach(ch => place(ch, { x: CX, y: pairRowY(ch.pair) + (ch.hom ? 34 : -34) }));
+        chs.forEach(ch => place(ch, { x: pairX(ch), y: pairY(ch.pair) }));
         sc.dur = 1.2;
-        cross(1, 2.0, 2.2);
-        chiasma(true, [0, 1, 2].map(p => ({ x: CX, y: pairRowY(p) })));
+        cross(1, 2.0, 2.2); chiasma(true);
         sc.setLabels([
           { text: 'Crossing over', x: 500, y: 32, kind: 'process' },
-          L('Chromatid', 95, 140, () => sc.armPt(chs[0], 0, 0, 0.8)),
-          L('Centromere', 905, 150, cPt(chs[1], 0)),
-          L('Chiasma', 95, 330, () => ({ x: CX - 26, y: pairRowY(1) }))
+          L('Chromatid', 95, 125, () => sc.armPt(chs[0], 0, 0, 0.7)),
+          L('Centromere', 95, 330, cPt(chs[2], 0)),
+          L('Chiasma', 905, 250, () => ({ x: CX, y: pairY(1) + 0.6 * chs[2].L }))
         ]);
-        sc.labelsDelay = 3.5;
       }
     });
     steps.push({
       phase: 'Prophase I', sub: 'Nuclear envelope breaks down',
-      text: 'The nuclear envelope breaks down and <b>spindle fibres</b> grow out from the centrioles towards the chromosomes. The homologous pairs stay together.',
+      text: ul(['The nuclear envelope breaks down.', '<b>Spindle fibres</b> grow from the centrioles.', 'Homologous pairs stay together.']),
       apply() {
         stage('I', 'pro', false, { grow: 0.45, alpha: 1 }, false, true);
         sc.go(sc.nuc[0], { alpha: 0.28 }, 0, 2.2);
-        chs.forEach(ch => place(ch, { x: CX, y: pairRowY(ch.pair) + (ch.hom ? 34 : -34), att: sideOf(ch) < 0 ? 'left' : 'right' }));
+        chs.forEach(ch => place(ch, { x: pairX(ch), y: pairY(ch.pair), att: ch.hom ? 'right' : 'left' }));
         cross(1, 0, 0.1); chiasma(false);
         sc.setLabels([L('Nuclear envelope breaking down', 215, 35, nucPt(0, 235)), L('Spindle fibres', 905, 150, fibre(chs[1], 1, 0.7)), L('Centriole', 95, 470, cenPt(0))]);
       }
@@ -222,41 +234,42 @@
     steps.push({
       phase: 'Metaphase I', sub: 'Pairs line up', popup: 'assort', randomise: true,
       highlight: 'Homologous chromosomes line up in pairs at the equator, one on each side.',
-      text: 'Spindle fibres attach to the <b>centromere</b> of each chromosome. Each homologous pair lines up with one homologue facing each pole. Which homologue faces which pole is random, and each pair does this independently. This is <b>independent assortment</b>. Press <b>Randomise</b> to shuffle the arrangement as many times as you like.',
+      text: ul(['Spindle fibres attach to the <b>centromere</b> of each chromosome.', 'Which homologue faces which pole is random: <b>independent assortment</b>.', 'Press <b>Randomise</b> as many times as you like.']),
       apply() {
         stage('I', 'meta', false, { grow: 1, alpha: 1 }, true, false);
         cross(1, 0, 0.1); chiasma(false);
-        chs.forEach(ch => { const s = sideOf(ch); place(ch, { x: CX + s * 42, y: metaRowY(ch.pair) + s * 36, att: s < 0 ? 'left' : 'right' }); });
-        const lc = setOf(0);
+        chs.forEach(ch => { const s = sideOf(ch); place(ch, { x: CX + s * 24, y: pairY(ch.pair), att: s < 0 ? 'left' : 'right' }); });
         sc.setLabels([{ text: 'Independent assortment', x: 500, y: 30, kind: 'process' },
-          L('Spindle fibres', 905, 150, fibre(chs[0].hom === S.sides[0] ? chs[1] : chs[0], 1, 0.5)), L('Centriole', 95, 470, cenPt(0))]);
+          L('Spindle fibres', 905, 150, fibre(homOn(0, 1), 1, 0.5)), L('Centriole', 95, 470, cenPt(0))]);
       }
     });
     steps.push({
       phase: 'Anaphase I', sub: 'Homologues pulled apart',
-      text: 'The spindle fibres pull the two homologous chromosomes of each pair towards <b>opposite poles</b>. The centromeres do <b>not</b> split, so each chromosome is still X shaped. The homologues separate at random (<b>random segregation</b>), so each pole gets a different mix of chromosomes. This halves the chromosome number.',
+      text: ul(['Spindle fibres pull the <b>homologues</b> of each pair to opposite poles.', 'Centromeres do <b>not</b> split: chromosomes stay X shaped.', 'Homologues separate at random (<b>random segregation</b>), so each pole gets a different mix.']),
       apply() {
         const g = stage('I', 'ana', false, { grow: 1, alpha: 1 }, true, false);
         cross(1, 0, 0.1);
-        chs.forEach(ch => { const s = sideOf(ch); ch.dir = [s, s]; place(ch, { x: CX + s * g.apex, y: metaRowY(ch.pair), bend: 1, nest: 14, att: s < 0 ? 'left' : 'right' }); });
-        sc.setLabels([L('Spindle fibres', 905, 60, fibre(setOf(1)[0], 1, 0.6)), L('Centriole', 95, 470, cenPt(0))]);
+        chs.forEach(ch => { const s = sideOf(ch); ch.dir = [s, s]; place(ch, { x: CX + s * g.apex, y: CY + (ch.pair - 1) * 110, bend: 1, nest: 12, att: s < 0 ? 'left' : 'right' }); });
+        sc.setLabels([L('Spindle fibres', 905, 60, fibre(homOn(0, 1), 1, 0.6)), L('Centriole', 95, 470, cenPt(0))]);
       }
     });
+    const teloI = name => function () {
+      const g = stage('I', name, false, { grow: 1, alpha: 0 }, false, false);
+      chs.forEach(ch => { const s = sideOf(ch); ch.dir = [s, s]; place(ch, { x: CX + s * g.lobe, y: CY + (ch.pair - 1) * 100, bend: 0.6, nest: 10, sc: 0.9, att: 'none' }); });
+    };
     steps.push({
       phase: 'Telophase I', sub: 'New nuclei form',
-      text: 'The chromosomes reach the poles. A new <b>nuclear envelope</b> forms around each set of chromosomes and the spindle fibres break down. The cell begins to pinch in the middle.',
+      text: ul(['Chromosomes reach the poles.', 'A new <b>nuclear envelope</b> forms around each set.', 'The spindle breaks down and the cell starts to pinch in the middle.']),
       apply() {
-        const g = stage('I', 'telo', false, { grow: 1, alpha: 0 }, false, false);
-        chs.forEach(ch => { const s = sideOf(ch); ch.dir = [s, s]; place(ch, { x: CX + s * g.lobe, y: CY + (ch.pair - 1) * 90, bend: 0.6, nest: 12, sc: 0.8, att: 'none' }); });
+        teloI('telo')();
         sc.setLabels([L('Nucleus', 500, 32, nucPt(0, 270)), L('Nucleus', 500, 608, nucPt(1, 90)), L('Centriole', 95, 440, cenPt(0)), L('Centriole', 905, 440, cenPt(1))]);
       }
     });
     steps.push({
       phase: 'Cytokinesis I', sub: 'Two cells form',
-      text: 'The cytoplasm divides and the cell pinches apart into <b>two separate cells</b>. Each new cell has only one chromosome from each homologous pair, so each is <b>haploid</b>. The chromosomes are still X shaped. Next, each cell goes through meiosis II, one at a time.',
+      text: ul(['The cytoplasm divides, forming <b>2 separate cells</b>.', 'Each has one chromosome from each pair: <b>haploid</b>.', 'Next, each cell goes through meiosis II, one at a time.']),
       apply() {
-        const g = stage('I', 'cyto', false, { grow: 1, alpha: 0 }, false, false);
-        chs.forEach(ch => { const s = sideOf(ch); ch.dir = [s, s]; place(ch, { x: CX + s * g.lobe, y: CY + (ch.pair - 1) * 90, bend: 0.6, nest: 12, sc: 0.8, att: 'none' }); });
+        teloI('cyto')();
         sc.setLabels([chipD('Haploid (n = 3)', 280, 55), chipD('Haploid (n = 3)', 720, 55)]);
       }
     });
@@ -265,10 +278,10 @@
     [0, 1].forEach(side => {
       const key = 'II' + side, tag = side === 0 ? 'Left cell' : 'Right cell';
       const set = () => setOf(side);
-      const segDirs = ch => { const sg = S.segr[ch.id]; return sg === 0 ? [-1, 1] : [1, -1]; };
+      const segDirs = ch => (S.segr[ch.id] === 0 ? [-1, 1] : [1, -1]);
       steps.push({
         phase: 'Prophase II', sub: tag, side,
-        text: '<b>Very little happens in Prophase II.</b> The chromosomes are already condensed, and this cell has only 3 of them (haploid). The nuclear envelope breaks down again and a new spindle begins to form.',
+        text: ul(['<b>Very little happens</b> in Prophase II.', 'Chromosomes are still condensed. This cell has only 3 (haploid).', 'The nuclear envelope breaks down and a new spindle forms.']),
         apply() {
           const s = set(); hide(s);
           stage(key, 'pro', true, { grow: 0.45, alpha: 1 }, false, true);
@@ -280,40 +293,43 @@
       steps.push({
         phase: 'Metaphase II', sub: tag, side,
         highlight: 'The chromosomes line up in a single file along the equator.',
-        text: 'Spindle fibres from both poles attach to the <b>centromere</b> of each chromosome. This time the chromosomes line up single file, not in pairs, because the homologues were separated in meiosis I.',
+        text: ul(['Spindle fibres from both poles attach to the <b>centromere</b> of each chromosome.', 'Chromosomes line up single file, not in pairs, because the homologues were separated in meiosis I.']),
         apply() {
           const s = set(); hide(s);
           stage(key, 'meta', true, { grow: 1, alpha: 1 }, true, false);
-          s.forEach((ch, p) => { ch.dir = segDirs(ch); place(ch, { x: CX, y: CY + (p - 1) * 140, att: 'both' }); });
+          const ys = fileY(s, 40);
+          s.forEach((ch, p) => { ch.dir = segDirs(ch); place(ch, { x: CX, y: ys[p], att: 'both' }); });
           sc.setLabels([L('Spindle fibres', 905, 150, fibre(s[0], 1, 0.5)), L('Centriole', 95, 470, cenPt(0)), L('Centriole', 905, 470, cenPt(1))]);
         }
       });
       steps.push({
         phase: 'Anaphase II', sub: tag, side,
-        text: 'The <b>centromeres</b> split and the spindle fibres pull the sister chromatids to opposite poles. Crossing over has made sister chromatids different from each other, so which chromatid goes to which pole is <b>random</b>. This is <b>random segregation</b>, and it makes the daughter cells non-identical.',
+        text: ul(['The <b>centromeres</b> split.', 'Sister chromatids are pulled to opposite poles.', 'Crossing over made sister chromatids different, so which chromatid goes to which pole is random: <b>random segregation</b>.']),
         apply() {
           const s = set(), g = stage(key, 'ana', true, { grow: 1, alpha: 1 }, true, false); hide(s);
-          s.forEach((ch, p) => { ch.dir = segDirs(ch); place(ch, { x: CX, y: CY + (p - 1) * 140, bend: 1, mv: g.apex, att: 'both' }); });
+          s.forEach((ch, p) => { ch.dir = segDirs(ch); place(ch, { x: CX, y: CY + (p - 1) * 105, bend: 1, mv: g.apex, att: 'both' }); });
           sc.setLabels([{ text: 'Random segregation', x: 500, y: 30, kind: 'process' },
             L('Centromere', 905, 150, cPt(s[0], 1)), L('Spindle fibres', 95, 590, fibre(s[2], 0, 0.6))]);
         }
       });
+      const teloII = name => function () {
+        const s = set(), g = stage(key, name, true, { grow: 1, alpha: 0 }, false, false); hide(s);
+        s.forEach(ch => { ch.dir = segDirs(ch); place(ch, { x: CX, y: CY + (ch.pair - 1) * 100, bend: 0.5, sc: 0.9, mv: g.lobe, att: 'none' }); });
+      };
       steps.push({
         phase: 'Telophase II', sub: tag, side,
-        text: 'The chromatids (now called chromosomes) reach the poles. A new <b>nuclear envelope</b> forms around each set and the spindle fibres break down. The cell begins to pinch in the middle.',
+        text: ul(['Chromatids (now chromosomes) reach the poles.', 'A new <b>nuclear envelope</b> forms around each set.', 'The spindle breaks down and the cell starts to pinch in the middle.']),
         apply() {
-          const s = set(), g = stage(key, 'telo', true, { grow: 1, alpha: 0 }, false, false); hide(s);
-          s.forEach(ch => { ch.dir = segDirs(ch); place(ch, { x: CX, y: CY + (ch.pair - 1) * 82, bend: 0.5, sc: 0.8, mv: g.lobe, att: 'none' }); });
+          teloII('telo')();
           sc.setLabels([L('Nucleus', 500, 32, nucPt(0, 270)), L('Nucleus', 500, 608, nucPt(1, 90)), L('Centriole', 95, 440, cenPt(0)), L('Centriole', 905, 440, cenPt(1))]);
         }
       });
       steps.push({
         phase: 'Cytokinesis II', sub: tag, side, doneSide: side,
-        text: 'The cytoplasm divides and this cell pinches apart into <b>two separate cells</b>. Each daughter cell is <b>haploid</b> with 3 single chromosomes. ' +
-          (side === 0 ? 'Now repeat the process for the right cell.' : 'Together, the four daughter cells are <b>non-identical</b>.'),
+        text: ul(['The cytoplasm divides, forming <b>2 separate cells</b>.', 'Each is <b>haploid</b>, with 3 single chromosomes.',
+          side === 0 ? 'Now repeat for the right cell.' : 'The 4 daughter cells are <b>non-identical</b>.']),
         apply() {
-          const s = set(), g = stage(key, 'cyto', true, { grow: 1, alpha: 0 }, false, false); hide(s);
-          s.forEach(ch => { ch.dir = segDirs(ch); place(ch, { x: CX, y: CY + (ch.pair - 1) * 82, bend: 0.5, sc: 0.8, mv: g.lobe, att: 'none' }); });
+          teloII('cyto')();
           sc.setLabels([chipD('Haploid (n = 3)', 280, 55), chipD('Haploid (n = 3)', 720, 55),
             { text: 'Non-identical cells', x: 500, y: 608, kind: 'process' }]);
         }
