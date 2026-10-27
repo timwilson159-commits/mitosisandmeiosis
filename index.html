@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cell Division Model</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section id="screen-start" class="screen active">
+  <div class="center-card">
+    <h1>Cell Division Model</h1>
+    <p class="lead">Step through a dividing cell, then draw your own model on the page. Which process do you want to model?</p>
+    <div class="choices">
+      <button class="choice" data-kind="mitosis"><span class="big">Mitosis</span><span>1 cell makes 2 identical cells</span></button>
+      <button class="choice" data-kind="meiosis"><span class="big">Meiosis</span><span>1 cell makes 4 non-identical cells</span></button>
+    </div>
+  </div>
+</section>
+
+<section id="screen-colours" class="screen">
+  <div class="center-card wide">
+    <h1 id="setup-title">Choose your colours</h1>
+    <p class="lead">Pick a different colour for each of the 6 chromosomes. Click a chromosome, then click a colour. <b>Use the same colours on your paper model.</b> Each pair has two homologous chromosomes of the same size but different colours.</p>
+    <div id="pairs" class="pairs"></div>
+    <div id="palette" class="palette"></div>
+    <div class="row">
+      <button id="colours-back" class="btn">Back</button>
+      <button id="colours-go" class="btn primary">Start the model</button>
+    </div>
+  </div>
+</section>
+
+<section id="screen-model" class="screen">
+  <header class="bar">
+    <div class="bar-left">
+      <button id="btn-home" class="btn small">Home</button>
+      <button id="btn-colours" class="btn small">Colours</button>
+    </div>
+    <div class="titles"><div id="mode-name" class="mode"></div><div id="phase-name" class="phase"></div><div id="phase-sub" class="sub"></div></div>
+    <div class="bar-right"><div id="progress-text"></div><div class="pbar"><div id="progress-bar"></div></div></div>
+  </header>
+  <main class="layout">
+    <div class="stage-wrap">
+      <canvas id="stage" width="1000" height="640"></canvas>
+      <div id="minimap" class="minimap hidden">
+        <div class="mm-cells"><div class="mm-cell"></div><div class="mm-cell"></div></div>
+        <div id="mm-text"></div>
+      </div>
+    </div>
+    <aside class="panel">
+      <div id="desc" class="desc"></div>
+      <div id="highlight" class="highlight hidden"></div>
+      <div class="tools">
+        <button id="btn-random" class="btn accent hidden">Randomise</button>
+        <button id="btn-replay" class="btn hidden">Replay</button>
+        <button id="btn-explain" class="btn hidden">Explain again</button>
+      </div>
+      <div class="nav">
+        <button id="btn-back" class="btn">Back</button>
+        <button id="btn-next" class="btn primary">Next</button>
+      </div>
+      <div id="hint" class="hint"></div>
+    </aside>
+  </main>
+</section>
+
+<section id="screen-summary" class="screen">
+  <header class="bar">
+    <div class="bar-left"><button id="sum-home" class="btn small">Home</button></div>
+    <div class="titles"><div id="sum-title" class="phase"></div></div>
+    <div class="bar-right"></div>
+  </header>
+  <main class="layout">
+    <div class="stage-wrap"><canvas id="summary" width="1000" height="640"></canvas></div>
+    <aside class="panel">
+      <div id="sum-text" class="desc"></div>
+      <div class="nav"><button id="sum-back" class="btn">Back</button></div>
+    </aside>
+  </main>
+</section>
+
+<div id="popup" class="modal">
+  <div class="modal-card">
+    <h2 id="popup-title"></h2>
+    <div id="popup-body"></div>
+    <button id="popup-ok" class="btn primary"></button>
+  </div>
+</div>
+
+<script src="js/engine.js"></script>
+<script src="js/steps.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
