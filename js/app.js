@@ -9,6 +9,34 @@
     ['Green', '#2e9e4f'], ['Teal', '#26a69a'], ['Cyan', '#29b6f6'], ['Blue', '#3f51b5'],
     ['Purple', '#8e24aa'], ['Pink', '#ec407a'], ['Brown', '#8d6e63'], ['Slate', '#546e7a']
   ];
+  const HUES = 24, LIGHTS = [28, 42, 56, 70, 84];
+  function hsl2hex(h, sat, l) {
+    sat /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12, a = sat * Math.min(l, 1 - l);
+    const f = n => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))));
+    return '#' + [f(0), f(8), f(4)].map(v => v.toString(16).padStart(2, '0')).join('');
+  }
+  function hex2hsl(hex) {
+    const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+    let h = 0, sat = 0;
+    if (d) {
+      sat = d / (1 - Math.abs(2 * l - 1));
+      h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      h = (h * 60 + 360) % 360;
+    }
+    return [h, sat * 100, l * 100];
+  }
+  function colourName(hex) {
+    const f = PALETTE.find(c => c[1] === hex);
+    if (f) return f[0];
+    const [h, sat, l] = hex2hsl(hex);
+    const tone = l < 35 ? 'Dark ' : l > 72 ? 'Light ' : '';
+    if (sat < 12) return l < 25 ? 'Black' : l > 85 ? 'White' : tone + 'Grey';
+    const names = [[15, 'Red'], [40, 'Orange'], [65, 'Yellow'], [90, 'Lime'], [160, 'Green'], [190, 'Teal'], [215, 'Cyan'], [255, 'Blue'], [290, 'Purple'], [335, 'Pink'], [360, 'Red']];
+    return tone + names.find(n => h < n[0])[1];
+  }
+  let pickerOpen = false;
   const PAIR_NAMES = ['Large pair', 'Medium pair', 'Small pair'];
   const S = { kind: null, colours: ['#e53935', '#3f51b5', '#fb8c00', '#26a69a', '#8e24aa', '#9ccc65'], sel: 0, sides: [0, 0, 0], randomised: false, segr: [] };
   let sc = null, steps = [], idx = 0, popupOpen = false, pendingApply = null, screen = 'start';
@@ -42,7 +70,7 @@
       for (let h = 0; h < 2; h++) {
         const id = p * 2 + h, b = document.createElement('button');
         b.className = 'slot' + (S.sel === id ? ' sel' : ''); b.dataset.id = id;
-        const nm = PALETTE.find(c => c[1] === S.colours[id])[0];
+        const nm = colourName(S.colours[id]);
         b.innerHTML = xSvg(S.colours[id], p) + '<span>Homologue ' + (h + 1) + '<br><b>' + nm + '</b></span>';
         b.addEventListener('click', () => { S.sel = id; buildSetup(); });
         card.querySelector('.slots').appendChild(b);
@@ -55,9 +83,33 @@
       const b = document.createElement('button'); b.className = 'swatch' + (used ? ' used' : '') + (owner === S.sel ? ' current' : '');
       b.style.background = hex; b.title = name + (used ? ' (already used)' : ''); b.disabled = used;
       b.setAttribute('aria-label', name); b.innerHTML = '<span>' + name + '</span>';
-      b.addEventListener('click', () => { S.colours[S.sel] = hex; if (S.sel < 5) S.sel++; buildSetup(); });
+      b.addEventListener('click', () => {
+        if (owner === S.sel) { pickerOpen = !pickerOpen; buildSetup(); return; }
+        S.colours[S.sel] = hex; pickerOpen = false; if (S.sel < 5) S.sel++; buildSetup();
+      });
       pal.appendChild(b);
     });
+    const more = $('more-colours'); more.innerHTML = '';
+    const tog = document.createElement('button'); tog.className = 'btn small'; tog.textContent = pickerOpen ? 'Hide rainbow' : 'More colours (rainbow)';
+    tog.addEventListener('click', () => { pickerOpen = !pickerOpen; buildSetup(); });
+    more.appendChild(tog);
+    if (!pickerOpen) return;
+    const hint = document.createElement('div'); hint.className = 'rb-hint';
+    hint.textContent = 'Click a colour to use it for the selected chromosome. Click the same colour again in the main palette to close this.';
+    more.appendChild(hint);
+    const grid = document.createElement('div'); grid.className = 'rainbow'; grid.style.gridTemplateColumns = 'repeat(' + HUES + ', 1fr)';
+    const cells = [];
+    LIGHTS.forEach(l => { for (let i = 0; i < HUES; i++) cells.push(hsl2hex(i * 360 / HUES, 85, l)); });
+    for (let i = 0; i < HUES; i++) cells.push(hsl2hex(0, 0, 100 - i * 100 / (HUES - 1)));
+    cells.forEach(hex => {
+      const owner = S.colours.indexOf(hex), used = owner >= 0 && owner !== S.sel;
+      const c = document.createElement('button'); c.className = 'rb' + (used ? ' used' : '') + (owner === S.sel ? ' current' : '');
+      c.style.background = hex; c.disabled = used; c.title = colourName(hex) + (used ? ' (already used)' : '');
+      c.setAttribute('aria-label', colourName(hex));
+      c.addEventListener('click', () => { S.colours[S.sel] = hex; buildSetup(); });
+      grid.appendChild(c);
+    });
+    more.appendChild(grid);
   }
   $('colours-back').addEventListener('click', () => show('start'));
   $('colours-go').addEventListener('click', startModel);

@@ -79,3 +79,13 @@ canvas { display: block; }
 .modal-card h2 { margin: 0 0 10px; font-size: 1.7rem; color: var(--accent); }
 .modal-card p { margin: 0 0 10px; }
 .modal-card .btn { margin-top: 8px; }
+
+.more-colours { margin-top: 4px; }
+.rb-hint { font-size: .85rem; color: var(--muted); margin: 8px 0 6px; }
+.rainbow { display: grid; gap: 2px; }
+.rb { height: 22px; border: 2px solid transparent; border-radius: 4px; cursor: pointer; padding: 0; }
+.rb:hover:not(:disabled) { transform: scale(1.25); border-color: var(--ink); position: relative; z-index: 1; }
+.rb.current { border-color: var(--ink); box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink); position: relative; z-index: 1; }
+.rb.used { opacity: .2; cursor: not-allowed; }
+#screen-colours { overflow-y: auto; }
+#screen-colours .center-card { margin: auto; }
