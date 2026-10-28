@@ -127,7 +127,11 @@
   }
 
   function setPanel(st) {
-    $('phase-name').textContent = st.phase;
+    const same = x => x.phase === st.phase && x.side === st.side;
+    let first = idx, last = idx;
+    while (first > 0 && same(steps[first - 1])) first--;
+    while (last < steps.length - 1 && same(steps[last + 1])) last++;
+    $('phase-name').textContent = st.phase + (last > first ? ' (' + (idx - first + 1) + '/' + (last - first + 1) + ')' : '');
     $('phase-sub').textContent = st.sub || '';
     $('desc').innerHTML = st.text;
     const nx = steps[idx + 1];
