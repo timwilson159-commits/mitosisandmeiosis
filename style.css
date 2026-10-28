@@ -89,3 +89,6 @@ canvas { display: block; }
 .rb.used { opacity: .2; cursor: not-allowed; }
 #screen-colours { overflow-y: auto; }
 #screen-colours .center-card { margin: auto; }
+
+.draw-this { background: #16a34a; color: #fff; font-weight: 800; font-size: 1.25rem; letter-spacing: .06em; padding: 10px 14px; border-radius: 10px; }
+.draw-this span { display: block; font-size: .85rem; font-weight: 600; letter-spacing: 0; opacity: .95; }

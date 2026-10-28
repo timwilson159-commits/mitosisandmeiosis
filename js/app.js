@@ -130,6 +130,8 @@
     $('phase-name').textContent = st.phase;
     $('phase-sub').textContent = st.sub || '';
     $('desc').innerHTML = st.text;
+    const nx = steps[idx + 1];
+    $('draw-this').classList.toggle('hidden', !!nx && nx.phase === st.phase && nx.side === st.side);
     const hl = $('highlight'); hl.innerHTML = st.highlight || ''; hl.classList.toggle('hidden', !st.highlight);
     $('btn-replay').classList.toggle('hidden', !st.replay);
     $('btn-explain').classList.toggle('hidden', !st.popup);
