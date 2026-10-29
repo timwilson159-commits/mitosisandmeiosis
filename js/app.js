@@ -45,13 +45,18 @@
   function show(name) {
     screen = name;
     document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + name));
+    if (name === 'colours') $('colours-go').textContent = S.cont ? 'Next' : 'Start the model';
     if (name === 'model' || name === 'summary') fit();
   }
 
   /* ---------- start ---------- */
   document.querySelectorAll('[data-kind]').forEach(b => b.addEventListener('click', () => {
-    S.kind = b.dataset.kind; $('setup-title').textContent = 'Choose your colours for ' + (S.kind === 'mitosis' ? 'mitosis' : 'meiosis'); buildSetup(); show('colours');
+    S.kind = b.dataset.kind; S.cont = false; $('setup-title').textContent = 'Choose your colours for ' + (S.kind === 'mitosis' ? 'mitosis' : 'meiosis'); buildSetup(); show('colours');
   }));
+
+  $('choice-continue').addEventListener('click', () => {
+    S.kind = 'meiosis'; S.cont = true; $('setup-title').textContent = 'Choose the colours you used for meiosis'; buildSetup(); show('colours');
+  });
 
   /* ---------- colour setup ---------- */
   function xSvg(col, size) {
@@ -112,17 +117,17 @@
     more.appendChild(grid);
   }
   $('colours-back').addEventListener('click', () => show('start'));
-  $('colours-go').addEventListener('click', startModel);
+  $('colours-go').addEventListener('click', () => { if (S.cont) cont.open(); else startModel(); });
 
   /* ---------- model ---------- */
-  function startModel() {
-    S.sides = [0, 0, 0]; S.randomised = false; S.segr = [0, 0, 0, 0, 0, 0]; S.segrDone = [false, false];
+  function startModel(from) {
+    const keep = typeof from === 'number';
+    if (!keep) { S.sides = [0, 0, 0]; S.randomised = false; S.segr = [0, 0, 0, 0, 0, 0]; S.segrDone = [false, false]; }
     sc = new CD.Scene(); sc.init(S.colours);
     steps = CD.buildSteps(sc, S);
     idx = 0; popupOpen = false;
     show('model');
-    goStep(0, 1, true);
-    $('minimap').classList.add('hidden');
+    goStep(keep ? from : 0, keep ? 0 : 1, true);
     startLoop();
   }
 
@@ -189,7 +194,7 @@
   $('btn-next').addEventListener('click', next);
   $('btn-back').addEventListener('click', back);
   $('btn-home').addEventListener('click', () => { stopLoop(); show('start'); });
-  $('btn-colours').addEventListener('click', () => { stopLoop(); buildSetup(); show('colours'); });
+  $('btn-colours').addEventListener('click', () => { stopLoop(); S.cont = false; buildSetup(); show('colours'); });
 
   $('btn-random').addEventListener('click', () => {
     const st = steps[idx];
@@ -246,6 +251,7 @@
   $('sum-back').addEventListener('click', backFromSummary);
   $('sum-home').addEventListener('click', () => { stopLoop(); show('start'); });
 
+  const cont = CD.initContinue({ S, show, start: startModel, colourName, finalCols });
   function finalCols(ch, c) { const a = ch.arms[c]; return a.map(x => (x.c1 ? x.c1 : x.c0)); }
 
   function drawSummary(ctx) {

@@ -16,6 +16,7 @@
       <button class="choice" data-kind="mitosis"><span class="big">Mitosis</span><span>1 cell makes 2 identical cells</span></button>
       <button class="choice" data-kind="meiosis"><span class="big">Meiosis</span><span>1 cell makes 4 non-identical cells</span></button>
     </div>
+    <div class="row"><button id="choice-continue" class="btn">Continue an existing meiosis model</button></div>
   </div>
 </section>
 
@@ -29,6 +30,21 @@
     <div class="row">
       <button id="colours-back" class="btn">Back</button>
       <button id="colours-go" class="btn primary">Start the model</button>
+    </div>
+  </div>
+</section>
+
+<section id="screen-continue" class="screen">
+  <div class="center-card wide cont-card">
+    <h1>Continue your meiosis model</h1>
+    <p class="lead">Click the phase you are up to, then drag the chromosomes back to where they were on your page.</p>
+    <div class="cont-grid">
+      <div id="cont-phases" class="cont-phases"></div>
+      <div id="cont-arrange" class="cont-arrange"></div>
+    </div>
+    <div class="row">
+      <button id="cont-back" class="btn">Back</button>
+      <button id="cont-go" class="btn primary" disabled>Continue from here</button>
     </div>
   </div>
 </section>
@@ -93,6 +109,7 @@
 
 <script src="js/engine.js"></script>
 <script src="js/steps.js"></script>
+<script src="js/continue.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

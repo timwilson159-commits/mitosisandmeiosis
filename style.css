@@ -92,3 +92,36 @@ canvas { display: block; }
 
 .draw-this { background: #16a34a; color: #fff; font-weight: 800; font-size: 1.25rem; letter-spacing: .06em; padding: 10px 14px; border-radius: 10px; }
 .draw-this span { display: block; font-size: .85rem; font-weight: 600; letter-spacing: 0; opacity: .95; }
+
+#screen-continue { overflow-y: auto; }
+.cont-card { max-width: 1120px; width: 96vw; margin: auto; padding: 22px 30px; text-align: left; }
+.cont-card h1, .cont-card .lead { text-align: center; }
+.cont-grid { display: grid; grid-template-columns: 230px 1fr; gap: 20px; }
+.cont-phases h3 { margin: 10px 0 6px; font-size: .95rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.cont-phases h3:first-child { margin-top: 0; }
+.phase-btn { display: block; width: 100%; text-align: left; font: inherit; font-weight: 600; padding: 7px 12px; margin-bottom: 5px; border: 2px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; }
+.phase-btn:hover { border-color: var(--primary); }
+.phase-btn.sel { background: var(--primary); border-color: var(--primary); color: #fff; }
+.cont-arrange { background: #f7faff; border: 2px solid var(--line); border-radius: 14px; padding: 14px 16px; min-height: 260px; }
+.cont-arrange h2 { margin: 0 0 8px; font-size: 1.4rem; }
+.cont-empty { color: var(--muted); font-size: 1.1rem; }
+.arr-block { margin-bottom: 14px; }
+.arr-block h3 { margin: 0 0 4px; font-size: 1.05rem; }
+.arr-block p { margin: 0 0 8px; color: var(--muted); font-size: .95rem; }
+.pair-row { display: flex; gap: 12px; }
+.arr-card { flex: 1; background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.arr-card h4 { margin: 0 0 6px; font-size: .95rem; text-align: center; }
+.small-note { font-size: .85rem; text-align: center; }
+.two { display: flex; gap: 8px; justify-content: center; }
+.dropslot { flex: 1; min-height: 130px; border: 2px dashed #9aa7c2; border-radius: 10px; padding: 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; }
+.slot-label { font-size: .8rem; color: var(--muted); font-weight: 700; }
+.chrom { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 3px; padding: 4px; border-radius: 8px; }
+.chrom span { width: 100%; text-align: center; font-size: .8rem; font-weight: 600; }
+.dragitem { cursor: grab; touch-action: none; user-select: none; background: #fff; }
+.dragitem:hover { background: #eef4ff; }
+.dragitem.dragging { opacity: .3; }
+.dragghost { position: fixed; z-index: 50; pointer-events: none; opacity: .9; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+.cont-grid { grid-template-columns: 200px minmax(0, 1fr); }
+.pair-row { flex-wrap: wrap; }
+.arr-card { min-width: 190px; }
+.dropslot { min-width: 70px; }
